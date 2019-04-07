@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fh.shop.backend.mapper.member.MemberMapper">
+    <select id="queryMemberList" parameterType="string" resultType="com.fh.shop.backend.po.member.Member">
+    /* select v.id,v.userName,v.phone,v.email,v.birthday,a.cityname sheng,b.cityname shi,c.cityname xian FROM t_member v
+LEFT JOIN t_city a ON v.shengId=a.id
+LEFT JOIN t_city b ON v.shiId=b.id
+LEFT JOIN t_city c ON v.xianId=c.id*/
+select id,userName,passWord,phone,email,birthday,regTime,lastLoginTime,cityName from t_member
+    </select>
+    <!--回显-->
+<select id="findOne" parameterType="int" resultType="com.fh.shop.backend.po.member.Member">
+    select id,userName,passWord,phone,email,birthday,regTime,lastLoginTime,cityName from t_member where id=#{value}
+</select>
+    <update id="update" parameterType="com.fh.shop.backend.po.member.Member">
+        update t_member set email=#{email},birthday=#{birthday},cityIds=#{cityIds},cityName=#{cityName} where id=#{id}
+    </update>
+</mapper>

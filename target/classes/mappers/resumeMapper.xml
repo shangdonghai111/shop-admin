@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fh.shop.backend.mapper.product.productDao">
+<!-- 商品增加的方法 id是方法名  parameterType适用于有返回值的参数-->
+	<insert id="add" parameterType="com.fh.shop.backend.po.product.Product">
+<selectKey resultType="int" keyProperty="id" order="AFTER">
+	select last_insert_id()
+</selectKey>
+	insert into t_product (id,name,price,entrtyDate,updateDate,brandId,productImage)
+	values(#{id},#{productName},#{productPrice},#{entrtyTime},#{updateTime},#{brand.id},#{productImage})
+	</insert>
+	
+<!-- 提取动态公共部分 -->
+ <sql id="productWhere">
+		<where>
+			<if test="productName != null and productName != ''">
+				name like concat('%',#{productName},'%')
+			</if>
+			<if test="minPrice != null and minPrice >= 0">
+				and price >= #{minPrice} 
+			</if>
+			<if test="maxPrice != null and maxPrice >= 0">
+				and price &lt;= #{maxPrice}
+			</if>
+			<if test="minEntrtyTime!= null ">
+				and entrtyDate >= #{minEntrtyTime} 
+			</if>
+			<if test="maxEntrtyTime != null ">
+				and entrtyDate &lt;=#{maxEntrtyTime} 
+			</if>
+			<if test="minUpdateTime!= null ">
+				and updateDate >= #{minUpdateTime} 
+			</if>
+			<if test="maxUpdateTime != null ">
+				and updateDate &lt;=#{maxUpdateTime} 
+			</if>
+			<if test="brand.id!= null and brand.id>=0">
+				and brandId = #{brand.id}
+			</if>
+		</where>
+	</sql>
+
+<!-- 查询所有的方法 resultType是有返回值用 -->
+<!-- <select id="queryProductList" resultType="product">
+select id,name productName,price productPrice from t_product
+</select> -->
+<resultMap id="select" type="product">
+	<result column="id" property="id"></result>
+	<result column="name" property="productName"></result>
+	<result column="price" property="productPrice"></result>
+	<result column="entrtyDate" property="entrtyTime"></result>
+	<result column="updateDate" property="updateTime"></result>
+	<result column="brandName" property="brand.brandName"></result>
+	<result column="brandId" property="brand.id"></result>
+	<result column="productImage" property="productImage"></result>
+</resultMap>
+
+	<!--查询不同品牌的产品数量-->
+	<select id="queryTotal" resultType="long" parameterType="int">
+ select count(*) from t_product where brandId=#{id}
+ </select>
+	<!--查询不同品牌的商品-->
+	<select id="findProductListByBrand" parameterType="int" resultMap="select">
+ select * from t_product where brandId = #{id}
+ </select>
+	<!--查询图片-->
+	<select id="queryImages" parameterType="int" resultType="images">
+		select id,imagePath from  t_images where productId=#{id}
+	</select>
+<!-- 分页查询 -->
+ <select id="queryProductList" parameterType="product" resultMap="select">
+	 select t.* from
+	 (select p.id,p.name,p.price,p.entrtyDate,p.updateDate,b.brandName,p.productImage from t_product p
+	left join t_brand b on b.id=p.brandId
+	<include refid="productWhere"></include>
+	 <if test="sortField != null and sortField != ''">
+		 order by ${sortField} ${sort}
+	 </if>
+	)t limit #{startPos},#{pageSize}
+
+
+</select>
+	<select id="findProductList" parameterType="product" resultMap="select">
+		select p.id,p.name,p.price,p.entrtyDate,p.updateDate,b.brandName from t_product p
+		left join t_brand b on b.id=p.brandId
+		<include refid="productWhere"></include>
+	</select>
+<!-- 单个删除 -->
+<delete id="deleteProduct" parameterType="java.lang.Integer">
+  delete from t_product where id=#{aa}
+</delete>
+<!-- 批量删除 -->
+<delete id="deleteAll">
+ delete from t_product where id in
+ <foreach collection="list" item="aa" open="(" close=")" separator=",">
+ #{aa}
+ </foreach>
+</delete>
+<!-- 修改回显 --><!--parameterType是传递的参数  resultType是返回值类型-->
+<select id="findProduct" parameterType="int" resultMap="select">
+	select * from t_product where id=#{value}
+</select>
+<!-- 修改 -->
+<update id="update" parameterType="product">
+	update t_product set name=#{productName},price=#{productPrice},
+	updateDate=#{updateTime},brandId=#{brand.id},productImage=#{productImage} where id=#{id}
+</update>
+<!-- 获取总条数 -->
+<select id="findProductListCount" parameterType="product" resultType="long">
+select count(*) from t_product p
+left join t_brand b on b.id=p.brandId
+<include refid="productWhere"></include>
+</select>
+	<!--查询商品列表-->
+	<select id="queryProductApi" parameterType="product" resultMap="select">
+select id,name,price,productImage from t_product
+	</select>
+</mapper>

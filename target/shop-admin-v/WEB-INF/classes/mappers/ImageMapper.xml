@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fh.shop.backend.mapper.image.ImageMapper">
+<!--增加-->
+    <insert id="add" parameterType="images">
+insert into t_images(productId,imagePath)values(#{productId},#{imagePath})
+
+</insert>
+<!--查询-->
+<select id="query" parameterType="int" resultType="images">
+    select id,productId,imagePath from t_images where id=#{id}
+</select>
+    <!--删除-->
+    <delete id="deleteImagePath" parameterType="int">
+        delete from t_images where id=#{id}
+    </delete>
+
+    <delete id="deleteImageList">
+        delete from t_images where imagePath in
+        <foreach collection="list" item="aa" open="(" close=")" separator=",">
+            #{aa}
+        </foreach>
+    </delete>
+
+    <insert id="addBathImages">
+        insert into t_images(productId,imagePath)values
+        <foreach collection="list" item="images" separator=",">
+            (#{images.productId},#{images.imagePath})
+        </foreach>
+    </insert>
+</mapper>

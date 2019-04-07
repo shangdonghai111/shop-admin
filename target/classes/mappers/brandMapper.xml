@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fh.shop.backend.mapper.brand.BrandDao">
+<!-- 提取公共的部分 -->
+ <sql id="whereo">
+		<where>
+			<if test="brandName != null and brandName != '' ">
+				brandName like concat('%',#{brandName},'%')
+			</if>
+			<if test="minEntrtyTime!= null">
+				and entrtyTime >= #{minEntrtyTime} 
+			</if>
+			<if test="maxEntrtyTime != null">
+				and entrtyTime &lt;=#{maxEntrtyTime} 
+			</if>
+			<if test="minUpdateTime!= null">
+				and updateTime >=#{minUpdateTime} 
+			</if>
+			<if test="maxUpdateTime != null">
+				and updateTime &lt;=#{maxUpdateTime} 
+			</if>
+		</where>
+	</sql>
+<!-- 增加 -->
+<insert id="add" parameterType="com.fh.shop.backend.po.brand.Brand">
+insert into t_brand (brandName,entrtyTime,updateTime) 
+	values(#{brandName},#{entrtyTime},#{updateTime})
+</insert>
+<!-- 分页查询 -->
+<resultMap id="queryList" type="brand">
+	<result column="id" property="id"></result>
+	<result column="brandName" property="brandName"></result>
+	<result column="entrtyTime" property="entrtyTime"></result>
+	<result column="updateTime" property="updateTime"></result>
+</resultMap>
+
+<select id="query" resultMap="queryList"  parameterType="brand">
+select t.* from
+(select id,brandName,entrtyTime,updateTime from t_brand 
+<include refid="whereo"></include>
+<!--<if test="dataSort!=null and dataSort!=''">
+order by ${dataSort} ${data}
+</if>
+<if test="dataSort==null and dataSort==''">
+order by id desc
+</if>-->
+	<if test="sortField != null and sortField != ''">
+	order by ${sortField} ${sort}
+</if>
+	<if test="sortField != null and sortField != ''">
+		order by id desc
+	</if>
+)t limit #{startPos},#{pageSize}
+
+</select>
+<!-- 单个删除 -->
+<delete id="deleteOne" parameterType="int">
+delete from t_brand where id=#{aa}
+</delete>
+
+<!-- 回显 -->
+<select id="findOne" resultType="brand" parameterType="int">
+select id,brandName,entrtyTime,updateTime from t_brand where id=#{id}
+</select>
+
+<!-- 修改 -->
+<update id="update" parameterType="brand">
+update t_brand set brandName=#{brandName},
+updateTime=#{updateTime} where id=#{id}
+</update>
+
+<!-- 批量删除 -->
+<delete id="deleteAll">
+ delete from t_brand where id in
+ <foreach collection="list" item="aa" open="(" close=")" separator=",">
+ #{aa}
+ </foreach>
+</delete>
+
+ <!-- 查询总条数 -->
+ <select id="queryCount" parameterType="brand" resultType="long">
+ select count(*) from t_brand
+ <include refid="whereo"></include>
+ </select>
+
+<!-- 查询全部 -->
+<select id="queryList" resultType="brand">
+select id,brandName,entrtyTime,updateTime from t_brand
+</select>
+	<!---->
+<!--查询-->
+	<select id="queryBrandApi" resultType="brand" parameterType="brand">
+		select id,brandName from t_brand
+	</select>
+
+
+
+</mapper>

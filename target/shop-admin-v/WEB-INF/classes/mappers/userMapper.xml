@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fh.shop.backend.mapper.user.UserMapper">
+<resultMap type="user" id="User">
+	<result column="id" property="id"></result>
+	<result column="name" property="userName"></result>
+	<result column="passWord" property="userPwd"></result>
+	<result column="salt" property="salt"></result>
+	<result column="count" property="count"></result>
+	<result column="loginTime" property="loginTime"></result>
+	<result column="errorCount" property="errorCount"></result>
+	<result column="errorLoginTime" property="errorLoginTime"></result>
+	<result column="userStatus" property="userStatus"></result>
+	<result column="userRealName" property="userRealName"></result>
+	<result column="birthday" property="birthday"></result>
+	<result column="sex" property="sex"></result>
+	<result column="salary" property="salary"></result>
+	<result column="deptId" property="dept.id"></result>
+	<result column="headPath" property="headPath"></result>
+	<result column="deptName" property="dept.deptName"></result>
+</resultMap>
+	<!-- 提取公共的部分 -->
+	<sql id="whereo">
+		<where>
+			<if test="userName != null and userName != '' ">
+				name like concat('%',#{userName},'%')
+			</if>
+            <if test="userRealName != null and userRealName != '' ">
+               and userRealName like concat('%',#{userRealName},'%')
+            </if>
+            <if test="minSalary != null and minSalary >=0 ">
+                  and salary >= #{minSalary}
+              </if>
+              <if test="maxSalary != null and maxSalary >=0 ">
+                  and salary &lt;= #{maxSalary}
+              </if>
+               <if test="minBirthday!= null ">
+                  and birthday >= #{minBirthday}
+              </if>
+              <if test="maxBirthday != null ">
+                  and birthday &lt;=#{maxBirthday}
+              </if>
+              <if test="deptList !=null and deptList.size() >0">
+                  and deptId in
+                  <foreach collection="deptList" item="aa" open="(" close=")" separator=",">
+                      #{aa}
+                  </foreach>
+              </if>
+		</where>
+	</sql>
+	<!--分页查询-->
+	<select id="queryUserList" parameterType="user" resultMap="User">
+		select t.* from
+		(select u.id,u.name,u.loginTime,u.userStatus,u.userRealName,u.birthday,u.sex,u.salary,d.deptName,u.deptId,headPath
+		from t_user u left join t_dept d on d.id=u.deptId
+		<include refid="whereo"></include>
+		order by id desc
+		)t limit #{startPos},#{pageSize}
+	</select>
+	<!--查询总条数-->
+	<select id="findUserListCount" parameterType="user" resultType="long">
+		select count(*)from t_user
+		<include refid="whereo"></include>
+	</select>
+	<!-- 批量删除 -->
+	<delete id="deleteAll">
+		delete from t_user where id in
+		<foreach collection="list" item="aa" open="(" close=")" separator=",">
+			#{aa}
+		</foreach>
+	</delete>
+	<!--批量修改-->
+	<update id="updateAllDept">
+		update t_user set deptId=1 where id in
+		<foreach collection="list" item="aa" open="(" close=")" separator=",">
+			#{aa}
+		</foreach>
+	</update>
+    <update id="updateAllDeptId">
+        update t_user set deptId=#{deptId} where id in
+        <foreach collection="idList" item="aa" open="(" close=")" separator=",">
+            #{aa}
+        </foreach>
+    </update>
+<!-- 根据用户名查询 -->
+<select id="queryUserByUserName" resultMap="User" parameterType="string">
+select * from t_user where name=#{userName}
+</select>
+
+
+	<!--根据id查询状态-->
+	<select id="queryStatus" resultMap="User" parameterType="int">
+		select * from t_user where id=#{id}
+	</select>
+<!-- 增加 -->
+<insert id="add" parameterType="user">
+insert into t_user(name,passWord,salt,userRealName,sex,salary,birthday,deptId,headPath)
+values(#{userName},#{userPwd},#{salt},#{userRealName},#{sex},#{salary},#{birthday},#{deptId},#{headPath})
+</insert>
+	<!--记录最后一次登录时间-->
+	<update id="updateLastLoginTime" parameterType="user">
+		update t_user set loginTime=#{loginTime} where id=#{id}
+	</update>
+	<!--重置登录次数为1-->
+<update id="resultLoginCount" parameterType="int">
+	update t_user set count=1 where id=#{value}
+</update>
+	<!--增加登录次数-->
+	<update id="increaseLoginCount" parameterType="int">
+	update t_user set  count=count+1 where id=#{value}
+</update>
+	<!--增加错误登录次数和时间-->
+	<update id="updateErrorCountAndErrorLoginTime" parameterType="user">
+		update t_user set errorCount =#{errorCount},errorLoginTime=#{errorLoginTime},
+    userStatus=#{userStatus} where name=#{userName}
+	</update>
+
+	<update id="updateErrorCount">
+	update t_user set errorCount=1,errorLoginTime=#{currDay} where id=#{id}
+	</update>
+
+	<update id="updateErrorTimeCount">
+		update t_user set errorCount=errorCount+1,errorLoginTime=#{currDay} where id=#{id}
+	</update>
+
+	<update id="resultErrorCount" parameterType="int">
+		update t_user set errorCount=0 where id=#{value }
+	</update>
+
+	<update id="updateErrorStatus" >
+		update t_user set userStatus=1,errorLoginTime=#{currDay} where id=#{id}
+	</update>
+<!--根据用户id查询-->
+	<select id="findUserById" resultType="user"  parameterType="int">
+		select u.id,name,u.userStatus,u.userRealName,u.birthday,u.sex,u.salary,d.deptName,u.deptId,headPath
+		from t_user u left join t_dept d on d.id=u.deptId
+		where u.id=#{value}
+	</select>
+	<update id="resultErrorStatus">
+		update t_user set userStatus=0 where id=#{id}
+	</update>
+
+<update id="updateUser" parameterType="user">
+	update t_user set name=#{userName},userRealName=#{userRealName},birthday=#{birthday},sex=#{sex},salary=#{salary},
+	deptId=#{deptId},headPath=#{headPath} where id=#{id}
+</update>
+
+    <!--根据选中的节点的子节点id查看子节点信息-->
+    <select id="findChildByChiledId" resultType="dept">
+        select id,deptName,parentId,remark from t_dept where id in
+        <foreach collection="list" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <!--根据部门名称查看用户信息-->
+    <select id="findUserByDeptName" resultMap="User" parameterType="string">
+		select u.id,name,u.userStatus,u.userRealName,u.birthday,u.sex,u.salary,d.deptName,u.deptId
+			from t_user u left join t_dept d on u.deptId=d.id
+			where deptName=#{value}
+	</select>
+
+
+
+
+</mapper>
